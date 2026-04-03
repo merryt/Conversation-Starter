@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conversation Starter</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body {
+    font-family: 'Manrope', sans-serif;
+    background-color: #f9fafb;
+    color: #2c2f30;
+  }
+  h1, h2, h3 {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  .gradient-btn {
+    background: linear-gradient(135deg, #0057bd 0%, #6e9fff 100%);
+    transition: all 0.3s ease;
+  }
+  .gradient-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 87, 189, 0.2);
+  }
+  .interest-card {
+    background: white;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 2px solid transparent;
+  }
+  .interest-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
+  }
+  .interest-card.selected {
+    border-color: #3b82f6;
+    background-color: #eff6ff;
+  }
+  .icebreaker-card {
+    position: relative;
+    overflow: hidden;
+  }
+  .icebreaker-card::after {
+    content: '';
+    position: absolute;
+    bottom: -20px;
+    right: -20px;
+    width: 100px;
+    height: 100px;
+    background: #eff6ff;
+    border-radius: 50%;
+    z-index: 0;
+    opacity: 0.5;
+  }
+</style>
+</head>
+<body class="min-h-screen py-12 px-4">
+
+<div class="max-w-4xl mx-auto">
+  <header class="text-center mb-16">
+    <h1 class="text-5xl font-extrabold tracking-tight text-slate-900 mb-4">Conversation Starter</h1>
+    <p class="text-lg text-slate-500 max-w-lg mx-auto">Skip the small talk. Find grounded, fresh topics to start meaningful conversations.</p>
+  </header>
+
+  <section class="mb-12">
+    <div class="flex items-center justify-between mb-8">
+      <h2 class="text-2xl font-bold">1. Select Interests</h2>
+      <span class="text-sm font-medium text-slate-400">Choose multiple</span>
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4" id="interestsGrid">
+      <!-- Generated via JS -->
+    </div>
+  </section>
+
+  <section class="mb-12">
+    <h2 class="text-2xl font-bold mb-8">2. Select Location</h2>
+    <div class="flex flex-col sm:flex-row items-center gap-4 bg-white p-6 rounded-2xl shadow-sm">
+      <div class="relative w-full sm:w-64">
+        <select id="locationSelect" class="w-full appearance-none bg-slate-50 border-2 border-slate-100 rounded-full px-6 py-3 font-semibold text-slate-700 outline-none focus:border-blue-500 transition-colors cursor-pointer">
+          <option value="Denver, Colorado">Denver, Colorado</option>
+        </select>
+        <div class="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none">
+          <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+        </div>
+      </div>
+      <button id="generateBtn" class="w-full sm:w-auto px-8 py-3 rounded-full text-white font-bold gradient-btn disabled:opacity-50 disabled:cursor-not-allowed">
+        Generate Starters
+      </button>
+    </div>
+  </section>
+
+  <section class="results-container">
+    <div class="loading hidden text-center py-12" id="loading">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent mb-4"></div>
+      <p class="text-slate-500 italic">Consulting Gemini & Google Search...</p>
+    </div>
+    
+    <div id="results" class="space-y-4">
+      <div class="bg-white p-12 rounded-3xl shadow-sm border border-slate-100 text-center">
+        <div class="text-4xl mb-4">👋</div>
+        <p class="text-slate-400 font-medium">Select some interests and a location above to see the magic happen.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+  const interests = [
+    { id: 'hobbies', emoji: '🎨', label: 'Hobbies' },
+    { id: 'location', emoji: '🗺️', label: 'Location' },
+    { id: 'news', emoji: '📰', label: 'News' },
+    { id: 'football', emoji: '🏈', label: 'Football' },
+    { id: 'basketball', emoji: '🏀', label: 'Basketball' },
+    { id: 'hockey', emoji: '🏒', label: 'Hockey' },
+    { id: 'golf', emoji: '⛳', label: 'Golf' },
+    { id: 'tech', emoji: '💻', label: 'Tech' },
+    { id: 'food', emoji: '🍔', label: 'Food' },
+    { id: 'music', emoji: '🎵', label: 'Music' },
+    { id: 'movies', emoji: '🎬', label: 'Movies' },
+    { id: 'nature', emoji: '🌿', label: 'Nature' },
+    { id: 'books', emoji: '📚', label: 'Books' }
+  ];
+
+  const selectedInterests = new Set();
+  const grid = document.getElementById('interestsGrid');
+  const generateBtn = document.getElementById('generateBtn');
+  const locationSelect = document.getElementById('locationSelect');
+
+  interests.forEach(interest => {
+    const div = document.createElement('div');
+    div.className = 'interest-card flex flex-col items-center justify-center p-6 rounded-2xl cursor-pointer shadow-sm text-center select-none';
+    div.innerHTML = `
+      <div class="text-4xl mb-3">${interest.emoji}</div>
+      <div class="font-bold text-sm text-slate-700">${interest.label}</div>
+    `;
+
+    div.addEventListener('click', () => {
+      if (selectedInterests.has(interest.label)) {
+        selectedInterests.delete(interest.label);
+        div.classList.remove('selected');
+      } else {
+        selectedInterests.add(interest.label);
+        div.classList.add('selected');
+      }
+      updateButtonsState();
+    });
+
+    grid.appendChild(div);
+  });
+
+  function updateButtonsState() {
+    generateBtn.disabled = selectedInterests.size === 0;
+  }
+  
+  updateButtonsState();
+
+  generateBtn.addEventListener('click', async () => {
+    if (selectedInterests.size === 0) return;
+    const location = locationSelect.value;
+    await generateTopics(location);
+  });
+
+  async function generateTopics(location) {
+    const resultsDiv = document.getElementById('results');
+    const loadingDiv = document.getElementById('loading');
+    const interestsList = Array.from(selectedInterests);
+
+    resultsDiv.classList.add('hidden');
+    loadingDiv.classList.remove('hidden');
+    generateBtn.disabled = true;
+
+    try {
+      const response = await fetch('/api/topics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ interests: interestsList, location: location })
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Server error');
+
+      // Style the output list to match our new design
+      resultsDiv.innerHTML = `<div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 icebreaker-card z-10 relative">${data.html}</div>`;
+      
+      // Select the UL and apply Tailwind classes
+      const ul = resultsDiv.querySelector('ul');
+      if (ul) {
+        ul.className = 'space-y-4 list-none p-0';
+        ul.querySelectorAll('li').forEach(li => {
+          li.className = 'p-4 bg-slate-50 rounded-xl font-medium text-slate-700 hover:bg-blue-50 transition-colors border-l-4 border-blue-500';
+        });
+      }
+
+    } catch (error) {
+      resultsDiv.innerHTML = `<div class="bg-red-50 text-red-600 p-6 rounded-2xl text-center font-bold">Failed to generate: ${error.message}</div>`;
+    } finally {
+      loadingDiv.classList.add('hidden');
+      resultsDiv.classList.remove('hidden');
+      updateButtonsState();
+    }
+  }
+</script>
+
+</body>
+</html>
